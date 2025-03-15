@@ -7,10 +7,7 @@ It tests whether parameters can be accurately recovered from simulated data.
 """
 
 import numpy as np
-# import matplotlib.pyplot as plt
-from scipy.stats import binomial, norm, gamma
-# import os
-# import time
+from scipy.stats import binom, norm, gamma
 
 class EZDiffusion:
     def __init__(self, seed=None):
@@ -77,7 +74,7 @@ class EZDiffusion:
         V_obs: Observed variance of RT
         """
         # Equation 7: Simulate observed number of correct trials
-        T_obs = binomial.rvs(N, R_pred)
+        T_obs = binom.rvs(N, R_pred)
         R_obs = T_obs / N
         
         # Equation 8: Simulate observed mean RT
