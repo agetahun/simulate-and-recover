@@ -6,17 +6,77 @@ import scipy.stats as stats
 N_values = [10, 40, 4000]  # Sample sizes
 total_iterations = 1000
 
+def generate_parameters(self):
+    """Generate random parameters within realistic ranges."""
+    # Generate "true" parameters
+    alpha = np.random.uniform(0.5, 2.0)  # Boundary separation
+    nu = np.random.uniform(0.5, 2.0)     # Drift rate
+    tau = np.random.uniform(0.1, 0.5)    # Non-decision time
+    
+    return nu, alpha, tau
+
 # Function to compute predicted summary statistics
-def compute_predicted_stats(v, alpha, tau):
-    y = np.exp(-alpha * v)
+def compute_predicted_stats(self, nu, alpha, tau):
+    """
+    Calculate predicted statistics using forward EZ equations.
+    
+    Parameters:
+    nu: Drift rate
+    alpha: Boundary separation
+    tau: Non-decision time
+    
+    Returns:
+    R_pred: Predicted accuracy rate
+    M_pred: Predicted mean response time
+    V_pred: Predicted variance of response times
+    """
+    # Calculate y = exp(-alpha * nu)
+    y = np.exp(-alpha * nu)
+    
+    # Equation 1: Predicted accuracy
     R_pred = 1 / (1 + y)
-    M_pred = tau + (alpha / (2 * v)) * ((1 - y) / (1 + y))
-    V_pred = (alpha / (2 * v**3)) * ((1 - 2 * alpha * v - y**2) / (1 + y)**2)
-
-    # Ensure V_pred is non-negative
-    V_pred = max(V_pred, 1e-6)  # Small positive value to prevent sqrt/gamma errors
-
+    
+    # Equation 2: Predicted mean RT
+    M_pred = tau + (alpha / (2 * nu)) * ((1 - y) / (1 + y))
+    
+    # Equation 3: Predicted variance of RT
+    V_pred = (alpha / (2 * nu**3)) * ((1 - 2*alpha*nu*y - y**2) / (1 + y)**2)
+    
     return R_pred, M_pred, V_pred
+
+def simulate_observations(self, R_pred, M_pred, V_pred, N):
+    """
+    Simulate observed statistics from sampling distributions.
+    
+    Parameters:
+    R_pred: Predicted accuracy
+    M_pred: Predicted mean RT
+    V_pred: Predicted variance of RT
+    N: Sample size
+    
+    Returns:
+    R_obs: Observed accuracy
+    M_obs: Observed mean RT
+    V_obs: Observed variance of RT
+    """
+    # Equation 7: Simulate observed number of correct trials
+    T_obs = binomial.rvs(N, R_pred)
+    R_obs = T_obs / N
+    
+    # Equation 8: Simulate observed mean RT
+    M_obs = norm.rvs(loc=M_pred, scale=np.sqrt(V_pred/N))
+    
+    # Equation 9: Simulate observed variance of RT
+    # Note: We use the fact that (n-1)s²/σ² ~ Gamma((n-1)/2, 2/(n-1))
+    # where s² is the sample variance and σ² is the population variance
+    if N > 1:  # Need at least 2 observations for variance
+        scale_factor = (N - 1) / (2 * V_pred)
+        V_obs = gamma.rvs(N - 1) / (2 * scale_factor)
+    else:
+        V_obs = V_pred  # Just use the predicted variance if N=1
+    
+    return R_obs, M_obs, V_obs
+
 
 # Function to compute estimated parameters
 def compute_estimated_params(R_obs, M_obs, V_obs):
