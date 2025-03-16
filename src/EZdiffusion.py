@@ -115,9 +115,9 @@ class EZDiffusion:
             
             # Equation 4: Estimate drift rate
             # First check if R_obs <= 0.5 to determine sign
-            sgn = 1 if R_obs > 0.5 else -1
+            #sgn = 1 if R_obs > 0.5 else -1
             # or the line above should be replaced with the following line
-            sgn = np.sgn
+            sgn = np.sign(R_obs - 0.5)
             # Handle special case to avoid division by zero
             if V_obs <= 0 or R_obs == 0.5:
                 nu_est = 0  # Default value for edge cases
@@ -125,7 +125,7 @@ class EZDiffusion:
                 # Calculate the term under the square root
                 sqrt_term = L * (R_obs**2 * L - R_obs * L + R_obs - 0.5) / V_obs
                 # shouldn't the above line be the 4th square root?
-                nu_est = sgn * np.sqrt(max(0, sqrt_term))  # Ensure non-negative under sqrt
+                nu_est = sgn * max(0, sqrt_term) ** 0.25  # Ensure non-negative under sqrt
             
             # Equation 5: Estimate boundary separation
             alpha_est = L / nu_est if nu_est != 0 else 0
@@ -161,16 +161,16 @@ class EZDiffusion:
         b2: squared error
         """
         #  Compute the estimation bias b=(ν,α,τ)−(νest,αest,τest)
-        b = (nu, alpha, tau) - (nu_est, alpha_est, tau_est)
+        #b = (nu, alpha, tau) - (nu_est, alpha_est, tau_est)
 
         # Compute squared error b^2
-        b2 = b ** 2
+        #b2 = b ** 2
 
-        trueParam = (nu, alpha, tau)
-        estParam = (nu_est, alpha_est, tau_est)
+        true_params = (nu, alpha, tau)
+        estimated_params = (nu_est, alpha_est, tau_est)
 
         # Compute the difference (b)
-        b = tuple(trueParam - estParam for trueParam, estParam in zip(trueParam, estParam))
+        b = tuple(true_params - estimated_params for true_params, estimated_params in zip(true_params, estimated_params))
 
         # Compute the squared error (b^2)
         b_squared = tuple(b_i ** 2 for b_i in b)
@@ -216,6 +216,8 @@ class EZDiffusion:
                 # Add to results
                 biases.append(b)
                 squared_errors.append(b_squared)
+                # for debugging
+                # print(f"Iteration {i} succeeded", "biases:", biases, "sq_errors:", squared_errors)
 
                 # results.append({
                 #     'N': N,
@@ -240,7 +242,7 @@ class EZDiffusion:
                 # })
             except Exception as e:
                 print(f"Error in iteration {i} with N={N}: {e}")
-        return np.mean(biases, axis=0), np.mean(squared_errors)
+        return biases, squared_errors
         # maybe remove axis above?
         return pd.DataFrame(results) 
 
