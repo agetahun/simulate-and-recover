@@ -3,8 +3,8 @@ import numpy as np
 import sys
 # Add the full path to the directory containing EZDiffusion.py
 sys.path.append('/workspace/simulate-and-recover/src')
-# Now you can import the module
 from EZdiffusion import EZDiffusion
+#written using chatGBT
 
 class TestEZDiffusion(unittest.TestCase):
     
