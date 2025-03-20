@@ -15,10 +15,9 @@ class EZDiffusion:
         if seed is not None:
             np.random.seed(seed)
 
-        # not sure if these are needed
         # Define parameter ranges
         N_values = [10, 40, 4000]  # Sample sizes
-        total_iterations = 1000
+        total_iterations = 1000 # are these ever used?
 
     def generate_parameters(self):
         """Generate random parameters within realistic ranges."""
@@ -86,6 +85,9 @@ class EZDiffusion:
         if N > 1:  # Need at least 2 observations for variance
             scale_factor = (N - 1) / (2 * V_pred)
             V_obs = gamma.rvs(N - 1) / (2 * scale_factor)
+            # ithink the previous equations are wrong and should look like this:
+            # scale_factor = (2 * V_pred) / (N - 1) 
+            # V_obs = gamma.rvs((N - 1) /2, (scale_factor))
         else:
             V_obs = V_pred  # Just use the predicted variance if N=1
         
@@ -106,7 +108,6 @@ class EZDiffusion:
         tau_est: Estimated non-decision time
         """
         try:
-            # not sure what this does or if needed
             # Ensure R_obs is between 0 and 1
             R_obs = max(min(R_obs, 0.9999), 0.0001)
             
@@ -114,9 +115,6 @@ class EZDiffusion:
             L = np.log(R_obs / (1 - R_obs))
             
             # Equation 4: Estimate drift rate
-            # First check if R_obs <= 0.5 to determine sign
-            #sgn = 1 if R_obs > 0.5 else -1
-            # or the line above should be replaced with the following line
             sgn = np.sign(R_obs - 0.5)
             # Handle special case to avoid division by zero
             if V_obs <= 0 or R_obs == 0.5:
@@ -124,7 +122,6 @@ class EZDiffusion:
             else:
                 # Calculate the term under the square root
                 sqrt_term = L * (R_obs**2 * L - R_obs * L + R_obs - 0.5) / V_obs
-                # shouldn't the above line be the 4th square root?
                 nu_est = sgn * max(0, sqrt_term) ** 0.25  # Ensure non-negative under sqrt
             
             # Equation 5: Estimate boundary separation
@@ -146,12 +143,12 @@ class EZDiffusion:
         
     def compute_bias(self, nu, alpha, tau, nu_est, alpha_est, tau_est):
         """
-        Simulate observed statistics from sampling distributions.
+        Compute the estimation bias and squared error.
         
         Parameters:
-        R_pred: Predicted accuracy
-        M_pred: Predicted mean RT
-        V_pred: Predicted variance of RT
+        nu: Drift rate
+        alpha: Boundary separation
+        tau: Non-decision time
         nu_est: Estimated drift rate
         alpha_est: Estimated boundary separation
         tau_est: Estimated non-decision time
@@ -160,12 +157,6 @@ class EZDiffusion:
         b: estimation bias
         b2: squared error
         """
-        #  Compute the estimation bias b=(ν,α,τ)−(νest,αest,τest)
-        #b = (nu, alpha, tau) - (nu_est, alpha_est, tau_est)
-
-        # Compute squared error b^2
-        #b2 = b ** 2
-
         true_params = (nu, alpha, tau)
         estimated_params = (nu_est, alpha_est, tau_est)
 
@@ -207,12 +198,7 @@ class EZDiffusion:
                 
                 # Step 5: Calculate bias and squared error
                 b, b_squared = self.compute_bias(nu, alpha, tau, nu_est, alpha_est, tau_est)
-                # bias_nu = nu - nu_est
-                # bias_alpha = alpha - alpha_est
-                # bias_tau = tau - tau_est
-                
-                # squared_error = (bias_nu**2 + bias_alpha**2 + bias_tau**2)
-                
+
                 # Add to results
                 biases.append(b)
                 squared_errors.append(b_squared)
@@ -243,8 +229,6 @@ class EZDiffusion:
             except Exception as e:
                 print(f"Error in iteration {i} with N={N}: {e}")
         return biases, squared_errors
-        # maybe remove axis above?
-        return pd.DataFrame(results) 
 
     def run_full_simulation(self, sample_sizes=[10, 40, 4000], iterations=1000):
         """
