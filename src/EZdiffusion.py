@@ -85,9 +85,6 @@ class EZDiffusion:
         if N > 1:  # Need at least 2 observations for variance
             scale_factor = (N - 1) / (2 * V_pred)
             V_obs = gamma.rvs(N - 1) / (2 * scale_factor)
-            # ithink the previous equations are wrong and should look like this:
-            # scale_factor = (2 * V_pred) / (N - 1) 
-            # V_obs = gamma.rvs((N - 1) /2, (scale_factor))
         else:
             V_obs = V_pred  # Just use the predicted variance if N=1
         
@@ -122,7 +119,7 @@ class EZDiffusion:
             else:
                 # Calculate the term under the square root
                 sqrt_term = L * (R_obs**2 * L - R_obs * L + R_obs - 0.5) / V_obs
-                nu_est = sgn * max(0, sqrt_term) ** 0.25  # Ensure non-negative under sqrt
+                nu_est = sgn * (sqrt_term ** 0.25)  # Ensure non-negative under sqrt
             
             # Equation 5: Estimate boundary separation
             alpha_est = L / nu_est if nu_est != 0 else 0
@@ -202,30 +199,6 @@ class EZDiffusion:
                 # Add to results
                 biases.append(b)
                 squared_errors.append(b_squared)
-                # for debugging
-                # print(f"Iteration {i} succeeded", "biases:", biases, "sq_errors:", squared_errors)
-
-                # results.append({
-                #     'N': N,
-                #     'iteration': i,
-                #     'nu_true': nu,
-                #     'alpha_true': alpha,
-                #     'tau_true': tau,
-                #     'nu_est': nu_est,
-                #     'alpha_est': alpha_est,
-                #     'tau_est': tau_est,
-                #     'bias_nu': bias_nu,
-                #     'bias_alpha': bias_alpha,
-                #     'bias_tau': bias_tau,
-                #     'R_pred': R_pred,
-                #     'M_pred': M_pred,
-                #     'V_pred': V_pred,
-                #     'R_obs': R_obs,
-                #     'M_obs': M_obs,
-                #     'V_obs': V_obs,
-                #     'bias_magnitude': np.sqrt(bias_nu**2 + bias_alpha**2 + bias_tau**2),
-                #     'squared_error': squared_error
-                # })
             except Exception as e:
                 print(f"Error in iteration {i} with N={N}: {e}")
         return biases, squared_errors
