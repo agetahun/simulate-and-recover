@@ -42,8 +42,6 @@ class TestEZDiffusion(unittest.TestCase):
         N = 100  # Sample size
         
         R_obs, M_obs, V_obs = self.model.simulate_observations(R_pred, M_pred, V_pred, N)
-        # used for debugging
-        # print( R_obs, M_obs, V_obs)
         
         # Check if observed statistics are reasonable numbers (non-NaN, finite values)
         self.assertTrue(np.isfinite(R_obs))
@@ -103,8 +101,6 @@ class TestEZDiffusion(unittest.TestCase):
         """Test the full simulation run."""
         # Run a small simulation with N = 10 and 5 iterations to ensure it completes
         biases, squared_errors = self.model.run_simulation(N=10, iterations=5)
-        # for debugging
-        # print(biases, squared_errors)
         
         # Check if the result is a valid non-empty array or list
         self.assertEqual(len(biases), 5)
